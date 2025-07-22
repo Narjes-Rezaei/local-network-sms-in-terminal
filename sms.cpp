@@ -1,83 +1,82 @@
+
 #include <iostream>
-#include <cstring>
+#include <string>
+#include <vector>
+#include <stdexcept>
 #include <unistd.h>
 #include <arpa/inet.h>
-#include <netinet/in.h>
 #include <netdb.h>
-using namespace std;
+#include <cstring>
 
-enum State{
-  CLIANT,
-  SERVER
-};
 class Server {
+private:
+    int serverSocket = -1;
+    int clientSocket = -1;
+    sockaddr_in serverAddr{}, clientAddr{};
+    socklen_t clientLen{};
+    const int PORT = 8080;
 
-  private:
-    int serverSocket, clientSocket;
-    struct sockaddr_in serverAddr, clientAddr;
-    socklen_t clientLen;
-    char buffer[1024];
-    const int PORT = 8888;
-
-  public:
-    server(){
+public:
+    Server() {
+        // ساخت سوکت TCP
         serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-        if (serverSocket < 0){
-            cerr << "Error creating socket." << endl;
-            exit(1);
-        }
+        if (serverSocket == -1)
+            throw std::runtime_error("Error creating socket");
 
-        memset(&serverAddr, 0, sizeof(serverAddr));
+        // تنظیمات آدرس سرور
         serverAddr.sin_family = AF_INET;
         serverAddr.sin_addr.s_addr = INADDR_ANY;
         serverAddr.sin_port = htons(PORT);
 
-        if (bind(serverSocket, (struct sockaddr*)&serverAddr,sizeof(serverAddr)) < 0)
-        {
-            cerr << "Bind failed" << endl;
-            exit(1);
-        }
+        // اتصال سوکت به پورت
+        if (bind(serverSocket, reinterpret_cast<sockaddr*>(&serverAddr), sizeof(serverAddr)) < 0)
+            throw std::runtime_error("Error binding");
+
+        std::cout << "serverSocket is created and connected on port" << endl;
     }
 
-    void startListening(){
-        listen(serverSocket, 1);
-        cout << "Server is listening on port " << PORT << "..." << endl;
+    void startListening() {
+        if (listen(serverSocket, 1) < 0)
+            throw std::runtime_error("Error listening");
+
+        std::cout << "listening on port: " << PORT << "..." << endl;
         clientLen = sizeof(clientAddr);
-        clientSocket = accept(serverSocket, (struct sockaddr*)&clientAddr , &clientLen);
+        clientSocket = accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
         if (clientSocket < 0)
-        {
-            cerr << "Failed to accept client connection." << endl;
-            exit(1);
+            throw std::runtime_error("Error ecceptig");
+
+        std::cout << "client connected" << endl;
+    }
+
+    std::string getOwnIP() {
+        char hostname[256];
+        if (gethostname(hostname, sizeof(hostname)) != 0)
+            return "UnknownHost";
+
+        hostent* host = gethostbyname(hostname);
+        if (!host) return "UnknownIP";
+
+        return std::string(inet_ntoa(*reinterpret_cast<in_addr*>(host->h_addr_list[0])));
+    }
+
+    void sendMessage(const std::string& msg) {
+        if (send(clientSocket, msg.c_str(), msg.size(), 0) == -1)
+            std::cerr << "Error sending message" << endl;
+    }
+
+    std::string receiveMessage() {
+        std::vector<char> buffer(1024, 0);
+        ssize_t bytesReceived = recv(clientSocket, buffer.data(), buffer.size(), 0);
+        if (bytesReceived <= 0) {
+            return "";
         }
-        cout << "Client connected!" << endl;
+        return std::string(buffer.data(), bytesReceived);
     }
 
-    string getOwnIP(){
-        char hostbuffer[256];
-        char *IPbuffer;
-        struct hostent *host_entry;
-
-
-        gethostname(hostbuffer, sizeof(hostbuffer));
-        host_entry = gethostbyname(buffer);
-        IPbuffer = inet_ntoa(*((struct in_addr*)host_entry->h_addr_list[0]));
-        return string(IPbuffer);
-    }
-
-    void sengMessage(const string &message){
-        send(clientSocket, message.c_str(), message.length(), 0);
-    }
-
-    string receiveMessage(){
-        memset(buffer, 0, sizeof(buffer));
-        recv(clientSocket, buffer, sizeof(buffer), 0);
-        return string(buffer);
-    }
-
-    void closeConnection(){
-        close(clientSocket);
-        close(serverSocket);
-        cout << "Connection closed." << endl;
+    void closeConnection() {
+        if (clientSocket != -1) close(clientSocket);
+        if (serverSocket != -1) close(serverSocket);
+        std::cout << "connection closed" << endl;
     }
 };
 
