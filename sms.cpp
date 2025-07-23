@@ -18,21 +18,21 @@ private:
 
 public:
     Server() {
-        // ساخت سوکت TCP
+      
         serverSocket = socket(AF_INET, SOCK_STREAM, 0);
         if (serverSocket == -1)
             throw std::runtime_error("Error creating socket");
 
-        // تنظیمات آدرس سرور
+        
         serverAddr.sin_family = AF_INET;
         serverAddr.sin_addr.s_addr = INADDR_ANY;
         serverAddr.sin_port = htons(PORT);
 
-        // اتصال سوکت به پورت
+        
         if (bind(serverSocket, reinterpret_cast<sockaddr*>(&serverAddr), sizeof(serverAddr)) < 0)
             throw std::runtime_error("Error binding");
 
-        std::cout << "serverSocket is created and connected on port" << endl;
+        std::cout << "serverSocket is created and connected on port: " << endl;
     }
 
     void startListening() {
