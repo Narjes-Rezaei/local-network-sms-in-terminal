@@ -43,7 +43,7 @@ public:
         clientLen = sizeof(clientAddr);
         clientSocket = accept(serverSocket, reinterpret_cast<sockaddr*>(&clientAddr), &clientLen);
         if (clientSocket < 0)
-            throw std::runtime_error("Error ecceptig");
+            throw std::runtime_error("Error acceptig");
 
         std::cout << "client connected" << endl;
     }
