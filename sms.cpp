@@ -2,7 +2,7 @@
 #include <iostream>
 #include <string>
 #include <map>
-#include <cstdlib>  // برای system()
+#include <cstdlib>
 #include <string>
 #include <vector>
 #include <stdexcept>
