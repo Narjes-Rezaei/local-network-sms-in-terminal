@@ -1,4 +1,8 @@
 #include <iostream>
+#include <iostream>
+#include <string>
+#include <map>
+#include <cstdlib>  // برای system()
 #include <string>
 #include <vector>
 #include <stdexcept>
@@ -8,6 +12,11 @@
 #include <sys/socket.h>
 #include <netinet/in.h>
 #include <cstring>
+
+enum State {
+  CLIENT,
+  SERVER
+};
 
 class Server {
 private:
@@ -130,22 +139,61 @@ public:
 };
 
 
-class Interface{
-  public:
 
-  private:
+class Stage {
+private:
+    std::map<std::string, std::string> colors = {
+        {"red", "31"},
+        {"green", "32"},
+        {"yellow", "33"},
+        {"blue", "34"},
+        {"magenta", "35"},
+        {"cyan", "36"},
+        {"white", "37"},
+        {"gray", "90"}
+    };
+  public:
+    Stage() {
+        system("clear");
+        system("figlet SMS | lolcat");
+    }
+
+    void setColor(const std::string& colorName) {
+        if (colors.find(colorName) != colors.end()) {
+            std::cout << "\033[" << colors[colorName] << "m";
+        } else {
+            std::cerr << "[Warning] color \"" << colorName << "\"Unknown" << std::endl;
+        }
+    }
+
+    void resetColor() {
+        std::cout << "\033[0m";
+    }
+
 };
 
 int main(int argc, char* argv[]) {
-    try {
-        Server server;
-        server.startListening();
-        server.sendMessage("its ok");
-        server.getOwnIP();
-        std::cout << server.receiveMessage();
-        server.closeConnection();
-    } catch (const std::exception& e) {
-        std::cerr << "Exception: " << e.what() << std::endl;
-    }
-    return 0;
+  Stage stage;
+  stage.setColor("magenta");
+  
+  int select;
+  State state;
+  
+  do {
+    std::cout << "(1)CLIENT | (2)SERVER \nClient Or Server? ";
+    std::cin >> select;
+  } while (!(select == 2 || select == 1));
+  
+  select == 1 ? state = CLIENT : state = SERVER;
+  
+  switch (state) {
+    case 0:
+      // client code
+      std::cout << "client selected.";
+      break;
+    case 1:
+      // server code
+      std::cout << "server selected.";
+  }
+  return 0;
 }
